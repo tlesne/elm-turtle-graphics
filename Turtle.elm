@@ -1,6 +1,17 @@
-module Turtle where
+module Turtle (draw, Movement, Step(..), length, depth) where
 
-{-| -}
+{-| A way to draw Turtle Graphics.
+
+# Creating the Program
+@docs Movement, Step
+
+# Running the Program
+@docs draw
+
+# Inspecting the Program
+@docs length, depth
+
+-}
 
 import Graphics.Element exposing (show, Element)
 import Graphics.Collage as C exposing (defaultLine)
@@ -11,7 +22,26 @@ import Random
 
 import List.Nonempty as NE exposing (Nonempty, (:::))
 
+{-| A Movement is a drawing action consisting of Steps in order.
+-}
 type alias Movement = List Step
+
+{-| A Step is an action that the turtle can take.
+    * Forward moves the turtle a given amount in the direction it is facing.
+    * Back moves the turtle backwards by the given amount.
+    * Left and Right rotate the turtle by the given angle in degrees.
+    * Make tells the turtle to perform an action.
+    * Scale sets the current scale factor. Moving forward and back are multiplied by the scale factor. Scale factors compound together: `Scale 2, Scale 2` is the same as `Scale 4`.
+    * Pen sets the color of the pen's ink.
+    * PenUp takes the pen off the paper so the turtle stops drawing.
+    * PenDown puts the pen back on the paper.
+    * Randomly provides a function with a random seed for use with the [Random](http://package.elm-lang.org/packages/elm-lang/core/latest/Random) library. The function must return the new seed.
+    * Teleport moves the turtle to a new location, drawing as is goes if the pen is down.
+    * RotateTo sets the turtle's rotation.
+
+The turtle starts at (0,0) facing up (90 degrees), with the pen down using black ink, and a scale factor of 1.
+
+-}
 type Step = Forward Float | Back Float | Right Float | Left Float |
             Make Movement |
             Scale Float |
@@ -19,106 +49,91 @@ type Step = Forward Float | Back Float | Right Float | Left Float |
             Randomly (Random.Seed -> (Step, Random.Seed)) |
             Teleport (Float, Float) | RotateTo Float
 
-corner : Movement
-corner =
-  [ Forward 50
-  , Right 90
-  ]
-
-square : Movement
-square =
-  List.repeat 4 (Make corner)
-
-ngon : Int -> Movement
-ngon n =
-    let step = Make [Forward 25, Right (360 / toFloat n)]
-    in List.repeat n step
-
-invisibly : Step -> Step
-invisibly x = Make
-    [ PenUp
-    , x
-    , PenDown
-    ]
-
-turtle : Movement
-turtle =
-    [ Make <| ngon 8
-    , Pen Color.blue
-    , invisibly <| Teleport (-100, 0)
-    , Make <| ngon 7
-    , invisibly <| Teleport (-300, 0)
-    , Pen Color.red
-    , randomNgon
-    ]
-
-randomNgon : Step
-randomNgon =
-    Randomly (\seed ->
-        let intGen = Random.int 3 8
-            (n, seed') = Random.generate intGen seed
-        in (Make <| ngon n, seed'))
 
 type alias Coord = (Float, Float)
 type alias Figure = {color : Color, path : Nonempty Coord}
-type alias ParseState = {theta : Float, scale : Float, penDown : Bool, seed : Random.Seed, figures : Nonempty Figure}
+type alias State = {theta : Float, scale : Float, penDown : Bool, seed : Random.Seed, figures : Nonempty Figure}
 
 -- make a new figure, based on the old one
-newFigure : ParseState -> ParseState
+newFigure : State -> State
 newFigure state =
     let oldFigure = NE.head state.figures
         newFigure = {oldFigure| path <- NE.dropTail oldFigure.path}
     in {state| figures <- newFigure ::: state.figures}
 
 -- Takes an action that requires a new figure. If the current figure *is* new, overwrite it; otherwise make a new one.
-changeFigure : ParseState -> (Figure -> Figure) -> ParseState
+changeFigure : State -> (Figure -> Figure) -> State
 changeFigure state f =
     if NE.isSingleton (NE.head state.figures).path
     then {state|figures <- NE.replaceHead (f <| NE.head state.figures) state.figures}
     else changeFigure (newFigure state) f
 
-{-| Run the turtle and immediately show the result in a collage of the given size (think `Window.dimensions`). Useful
-for rapidly iterating code, and for use with `Signal.map` and dynamic controls.
--}
-drawTurtle : Movement -> (Int, Int) -> Element
-drawTurtle m dims =
-    let state0 : ParseState
-        state0 = ParseState (degrees 90) 1 True (Random.initialSeed 628318530718) <| NE.fromElement (Figure Color.black (NE.fromElement (0,0)))
-        moveTo : ParseState -> Coord -> ParseState
-        moveTo state pos =
-            if not state.penDown
-            then changeFigure state (\fig -> {fig| path <- NE.fromElement pos})
-            else let oldFigure = NE.head state.figures
-                     newFigure = {oldFigure| path <- pos ::: oldFigure.path}
-                 in {state| figures <- NE.replaceHead newFigure state.figures}
-        parse1 : Step -> ParseState -> ParseState
-        parse1 step state = case step of
-            Forward d -> let (x0, y0) = NE.head (NE.head state.figures).path
-                             dx = state.scale * d * cos state.theta
-                             dy = state.scale * d * sin state.theta
-                         in moveTo state (x0+dx, y0+dy)
-            Back d -> parse1 (Forward -d) state
-            Right ang -> {state| theta <- state.theta - (degrees ang)}
-            Left ang -> {state| theta <- state.theta + (degrees ang)}
-            Scale x -> {state| scale <- state.scale * x}
-            Pen color -> changeFigure state (\fig -> {fig|color <- color})
-            PenUp -> {state| penDown <- False}
-            PenDown -> {state| penDown <- True}
-            Randomly f -> let (step', seed') = f state.seed
-                          in parse1 step' {state|seed <- seed'}
-            Teleport newPos -> moveTo state newPos
-            RotateTo newTheta -> {state| theta <- (degrees newTheta)}
-            Make ms -> parse state ms
-        parse : ParseState -> Movement -> ParseState
-        parse = List.foldl parse1
-        render : (Int, Int) -> ParseState -> Element
-        render (w,h) state = C.collage w h <|
-            List.map (uncurry C.traced) <|
-            List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path)) (NE.toList state.figures)
-        drawing : ParseState
-        drawing = parse state0 m
-        _ = Debug.log "number of figures" (NE.length drawing.figures)
-        _ = Debug.log "drawing" drawing
-    in render dims drawing
+-- initial state of the evaluator
+state0 : State
+state0 = State (degrees 90) 1 True (Random.initialSeed 628318530718)
+            <| NE.fromElement (Figure Color.black (NE.fromElement (0,0)))
 
-main = Signal.map (drawTurtle turtle) Window.dimensions
+-- move to a new location, creating a new figure if the pen is up
+moveTo : State -> Coord -> State
+moveTo state pos =
+    if not state.penDown
+    then changeFigure state (\fig -> {fig| path <- NE.fromElement pos})
+    else let oldFigure = NE.head state.figures
+             newFigure = {oldFigure| path <- pos ::: oldFigure.path}
+         in {state| figures <- NE.replaceHead newFigure state.figures}
+
+eval : Step -> State -> State
+eval step state = case step of
+    Forward d -> let (x0, y0) = NE.head (NE.head state.figures).path
+                     dx = state.scale * d * cos state.theta
+                     dy = state.scale * d * sin state.theta
+                 in moveTo state (x0+dx, y0+dy)
+    Back d -> eval (Forward -d) state
+    Right ang -> {state| theta <- state.theta - (degrees ang)}
+    Left ang -> {state| theta <- state.theta + (degrees ang)}
+    Scale x -> {state| scale <- state.scale * x}
+    Pen color -> changeFigure state (\fig -> {fig|color <- color})
+    PenUp -> {state| penDown <- False}
+    PenDown -> {state| penDown <- True}
+    Randomly f -> let (step', seed') = f state.seed
+                  in eval step' {state|seed <- seed'}
+    Teleport newPos -> moveTo state newPos
+    RotateTo newTheta -> {state| theta <- (degrees newTheta)}
+    Make ms -> evalMany state ms
+
+evalMany : State -> Movement -> State
+evalMany = List.foldl eval
+
+-- render the eval'd state as a collage with the given dimensions
+render : (Int, Int) -> State -> Element
+render (w,h) state =
+    C.collage w h <|
+    List.map (uncurry C.traced) <|
+    List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path))
+             (NE.toList state.figures)
+
+{-| Run the turtle and immediately show the result in a collage of the given size (think `Window.dimensions`). Useful for rapidly iterating code, and for use with `Signal.map` and dynamic controls.
+-}
+draw : Movement -> (Int, Int) -> Element
+draw m dims =
+    render dims <| evalMany state0 m
+
+{-| Determine the number of steps in a Movement, accounting for recursion.
+-}
+length : Movement -> Int
+length =
+    let length' step = case step of
+        Make m' -> length m'
+        _ -> 1
+    in List.foldl (\step sum -> length' step + sum) 0
+
+{-| Determine the recursive depth of a Movement.
+-}
+depth : Movement -> Int
+depth =
+    let depth' step = case step of
+        Make m' -> 1 + depth m'
+        _ -> 1
+    in List.foldl (\step sum -> depth' step `max` sum) 0
+
+
