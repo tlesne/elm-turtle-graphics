@@ -29,4 +29,5 @@ quadrant =
 
 turtle = List.repeat 4 (Make quadrant)
 
-main = Signal.map (Turtle.draw turtle) Window.dimensions
+main = Turtle.animate turtle
+-- main = Signal.map (Turtle.draw turtle) Window.dimensions

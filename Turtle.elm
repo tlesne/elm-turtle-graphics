@@ -1,4 +1,4 @@
-module Turtle (draw, Movement, Step(..), length, depth) where
+module Turtle (draw, animate, Movement, Step(..), length, depth) where
 
 {-| A way to draw Turtle Graphics.
 
@@ -6,19 +6,19 @@ module Turtle (draw, Movement, Step(..), length, depth) where
 @docs Movement, Step
 
 # Running the Program
-@docs draw
+@docs draw, animate
 
 # Inspecting the Program
 @docs length, depth
 
 -}
 
-import Graphics.Element exposing (show, Element)
+import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as C exposing (defaultLine)
 import Color exposing (Color)
 import Window
-import Debug
 import Random
+import Time
 
 import List.Nonempty as NE exposing (Nonempty, (:::))
 
@@ -54,6 +54,11 @@ type alias Coord = (Float, Float)
 type alias Figure = {color : Color, path : Nonempty Coord}
 type alias State = {theta : Float, scale : Float, penDown : Bool, seed : Random.Seed, figures : Nonempty Figure}
 
+-- initial state of the evaluator
+state0 : State
+state0 = State (degrees 90) 1 True (Random.initialSeed 628318530718)
+            <| NE.fromElement (Figure Color.black (NE.fromElement (0,0)))
+
 -- make a new figure, based on the old one
 newFigure : State -> State
 newFigure state =
@@ -67,11 +72,6 @@ changeFigure state f =
     if NE.isSingleton (NE.head state.figures).path
     then {state|figures <- NE.replaceHead (f <| NE.head state.figures) state.figures}
     else changeFigure (newFigure state) f
-
--- initial state of the evaluator
-state0 : State
-state0 = State (degrees 90) 1 True (Random.initialSeed 628318530718)
-            <| NE.fromElement (Figure Color.black (NE.fromElement (0,0)))
 
 -- move to a new location, creating a new figure if the pen is up
 moveTo : State -> Coord -> State
@@ -99,24 +99,50 @@ eval step state = case step of
                   in eval step' {state|seed <- seed'}
     Teleport newPos -> moveTo state newPos
     RotateTo newTheta -> {state| theta <- (degrees newTheta)}
-    Make ms -> evalMany state ms
+    Make ms -> evalFold ms state
 
-evalMany : State -> Movement -> State
-evalMany = List.foldl eval
+-- evaluate many steps, saving the end result
+evalFold : Movement -> State -> State
+evalFold = flip (List.foldl eval)
+
+-- evaluate many steps, saving each intermediate end result
+evalScan : State -> Movement -> List State
+evalScan state m =
+    case m of
+        [] -> [state]
+        step::steps -> case step of
+            Make m' -> let states = evalScan state m'
+                           state' = states |> List.reverse |> List.head
+                                      |> Maybe.withDefault state
+                       in states ++ evalScan state' steps
+            _ -> let state' = eval step state
+                 in state' :: evalScan state' steps
 
 -- render the eval'd state as a collage with the given dimensions
-render : (Int, Int) -> State -> Element
-render (w,h) state =
+render : (Int, Int) -> Nonempty Figure -> Element
+render (w,h) figures =
     C.collage w h <|
     List.map (uncurry C.traced) <|
     List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path))
-             (NE.toList state.figures)
+             (NE.toList figures)
 
 {-| Run the turtle and immediately show the result in a collage of the given size (think `Window.dimensions`). Useful for rapidly iterating code, and for use with `Signal.map` and dynamic controls.
 -}
 draw : Movement -> (Int, Int) -> Element
 draw m dims =
-    render dims <| evalMany state0 m
+    render dims (evalFold m state0).figures
+
+{-| Animate the turtle drawing by showing the progressive steps.
+-}
+animate : Movement -> Signal Element
+animate m =
+    case NE.fromList <| evalScan state0 m of
+        Nothing -> Signal.constant Element.empty
+        Just frames ->
+            let current : Signal (Nonempty State)
+                current = Signal.foldp (always NE.pop) frames (Time.fps 60)
+                renderHelper dims ne_state = render dims (NE.head ne_state).figures
+        in Signal.map2 renderHelper Window.dimensions current
 
 {-| Determine the number of steps in a Movement, accounting for recursion.
 -}
@@ -135,5 +161,4 @@ depth =
         Make m' -> 1 + depth m'
         _ -> 1
     in List.foldl (\step sum -> depth' step `max` sum) 0
-
 
