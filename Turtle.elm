@@ -31,7 +31,9 @@ type alias Movement = List Step
     * Back moves the turtle backwards by the given amount.
     * Left and Right rotate the turtle by the given angle in degrees.
     * Make tells the turtle to perform an action.
+    * Branch tells the turle to perform two actions starting from the same point.
     * Scale sets the current scale factor. Moving forward and back are multiplied by the scale factor. Scale factors compound together: `Scale 2, Scale 2` is the same as `Scale 4`.
+    * Stay tells the turtle to do nothing.
     * Pen sets the color of the pen's ink.
     * PenUp takes the pen off the paper so the turtle stops drawing.
     * PenDown puts the pen back on the paper.
@@ -43,8 +45,9 @@ The turtle starts at (0,0) facing up (90 degrees), with the pen down using black
 
 -}
 type Step = Forward Float | Back Float | Right Float | Left Float |
-            Make Movement |
+            Make Movement | Branch Movement Movement |
             Scale Float |
+            Stay |
             Pen Color | PenUp | PenDown |
             Randomly (Random.Seed -> (Step, Random.Seed)) |
             Teleport (Float, Float) | RotateTo Float
@@ -82,6 +85,7 @@ moveTo state pos =
              newFigure = {oldFigure| path <- pos ::: oldFigure.path}
          in {state| figures <- NE.replaceHead newFigure state.figures}
 
+-- evaluate a step given a state to produce a new state
 eval : Step -> State -> State
 eval step state = case step of
     Forward d -> let (x0, y0) = NE.head (NE.head state.figures).path
@@ -92,6 +96,7 @@ eval step state = case step of
     Right ang -> {state| theta <- state.theta - (degrees ang)}
     Left ang -> {state| theta <- state.theta + (degrees ang)}
     Scale x -> {state| scale <- state.scale * x}
+    Stay -> state
     Pen color -> changeFigure state (\fig -> {fig|color <- color})
     PenUp -> {state| penDown <- False}
     PenDown -> {state| penDown <- True}
@@ -100,6 +105,15 @@ eval step state = case step of
     Teleport newPos -> moveTo state newPos
     RotateTo newTheta -> {state| theta <- (degrees newTheta)}
     Make ms -> evalFold ms state
+    Branch m1 m2 ->
+        let oldFigure = NE.head state.figures
+            blankFigure = {oldFigure| path <- NE.dropTail oldFigure.path}
+            blankState = {state| figures <- NE.fromElement blankFigure}
+            results1 = evalFold m1 blankState
+            results2 = evalFold m2 blankState
+            newFigures = NE.Nonempty oldFigure
+                <| NE.toList results1.figures ++ NE.toList results2.figures ++ NE.tail state.figures
+        in {state| figures <- newFigures}
 
 -- evaluate many steps, saving the end result
 evalFold : Movement -> State -> State
@@ -150,6 +164,7 @@ length : Movement -> Int
 length =
     let length' step = case step of
         Make m' -> length m'
+        Branch m1 m2 = length m1 + length m2 + 1
         _ -> 1
     in List.foldl (\step sum -> length' step + sum) 0
 
@@ -159,6 +174,7 @@ depth : Movement -> Int
 depth =
     let depth' step = case step of
         Make m' -> 1 + depth m'
+        Branch m1 m2 = length m1 `max` length m2 + 1
         _ -> 1
     in List.foldl (\step sum -> depth' step `max` sum) 0
 
