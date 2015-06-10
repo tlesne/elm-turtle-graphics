@@ -164,7 +164,7 @@ length : Movement -> Int
 length =
     let length' step = case step of
         Make m' -> length m'
-        Branch m1 m2 = length m1 + length m2 + 1
+        Branch m1 m2 -> length m1 + length m2
         _ -> 1
     in List.foldl (\step sum -> length' step + sum) 0
 
@@ -174,7 +174,7 @@ depth : Movement -> Int
 depth =
     let depth' step = case step of
         Make m' -> 1 + depth m'
-        Branch m1 m2 = length m1 `max` length m2 + 1
+        Branch m1 m2 -> length m1 `max` length m2 + 1
         _ -> 1
     in List.foldl (\step sum -> depth' step `max` sum) 0
 
