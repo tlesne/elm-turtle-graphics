@@ -1,4 +1,4 @@
-module Turtle (draw, animate, Movement, Step(..), length, depth) where
+module Turtle.Core (draw, animate, Movement, Step(..), length, depth) where
 
 {-| A way to draw Turtle Graphics.
 
@@ -22,8 +22,7 @@ import Time
 
 import List.Nonempty as NE exposing (Nonempty, (:::))
 
-{-| A Movement is a drawing action consisting of Steps in order.
--}
+-- This alias is internal to Core.
 type alias Movement = List Step
 
 {-| A Step is an action that the turtle can take.
