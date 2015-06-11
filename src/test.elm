@@ -1,4 +1,5 @@
 import Turtle
 import Turtle.Advanced as Turtle
 
-main = Turtle.animate [Turtle.forward 50, Turtle.left 90, Turtle.forward 50]
+main = Turtle.animate
+    [Turtle.scaled 50 <| Turtle.make (List.map Turtle.ngon [3..32])]
