@@ -16,7 +16,7 @@ ngon n =
 
 scaled : Float -> Step -> Step
 scaled factor step =
-    Core.Make [scale factor, step, scale (1/factor)]
+    Core.Make [Core.Scale factor, step, Core.Scale (1/factor)]
 
 invisibly : Step -> Step
 invisibly step =
