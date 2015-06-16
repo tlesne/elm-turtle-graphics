@@ -79,8 +79,8 @@ withRandom =
 animate : List Step -> Signal Element
 animate = Core.animate
 
-{-| Run the turtle and immediately show the result in a collage of the given size (often `Window.dimensions`). It is
-useful when you are changing your code quickly.
+{-| Run the turtle and immediately show the result in a collage of the given size. It is
+useful when you are changing your code quickly: `main = Signal.map (draw mySteps) Window.dimensions`
 -}
 draw : List Step -> (Int,Int) -> Element
 draw = Core.draw

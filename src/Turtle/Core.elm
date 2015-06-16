@@ -44,13 +44,12 @@ The turtle starts at (0,0) facing up (90 degrees), with the pen down using black
 
 -}
 type Step = Forward Float | Back Float | Right Float | Left Float |
-            Make Movement | Branch Movement Movement |
+            Make Movement | Branch Movement Movement | Atomically Movement |
             Scale Float |
             Stay |
             Pen Color | PenUp | PenDown |
             Randomly (Random.Seed -> (Step, Random.Seed)) |
             Teleport (Float, Float) | RotateTo Float
-
 
 type alias Coord = (Float, Float)
 type alias Figure = {color : Color, path : Nonempty Coord}
@@ -104,6 +103,7 @@ eval step state = case step of
     Teleport newPos -> moveTo state newPos
     RotateTo newTheta -> {state| theta <- (degrees newTheta)}
     Make ms -> evalFold ms state
+    Atomically ms -> evalFold ms state
     Branch m1 m2 ->
         let oldFigure = NE.head state.figures
             blankFigure = {oldFigure| path <- NE.dropTail oldFigure.path}
@@ -125,8 +125,7 @@ evalScan state m =
         [] -> [state]
         step::steps -> case step of
             Make m' -> let states = evalScan state m'
-                           state' = states |> List.reverse |> List.head
-                                      |> Maybe.withDefault state
+                           state' = states |> List.reverse |> List.head |> Maybe.withDefault state
                        in states ++ evalScan state' steps
             _ -> let state' = eval step state
                  in state' :: evalScan state' steps
@@ -163,6 +162,7 @@ length : Movement -> Int
 length =
     let length' step = case step of
         Make m' -> length m'
+        Atomically m' -> length m'
         Branch m1 m2 -> length m1 + length m2
         _ -> 1
     in List.foldl (\step sum -> length' step + sum) 0
@@ -172,8 +172,9 @@ length =
 depth : Movement -> Int
 depth =
     let depth' step = case step of
-        Make m' -> 1 + depth m'
-        Branch m1 m2 -> length m1 `max` length m2 + 1
+        Make m' -> depth m' + 1
+        Atomically m' -> depth m' + 1
+        Branch m1 m2 -> depth m1 `max` depth m2 + 1
         _ -> 1
     in List.foldl (\step sum -> depth' step `max` sum) 0
 
