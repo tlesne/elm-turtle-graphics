@@ -1,17 +1,4 @@
-module Turtle.Core (draw, animate, Movement, Step(..), length, depth) where
-
-{-| A way to draw Turtle Graphics.
-
-# Creating the Program
-@docs Movement, Step
-
-# Running the Program
-@docs draw, animate
-
-# Inspecting the Program
-@docs length, depth
-
--}
+module Turtle.Core (draw, animate, Step(..), length, depth) where
 
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as C exposing (defaultLine)
@@ -22,27 +9,10 @@ import Time
 
 import List.Nonempty as NE exposing (Nonempty, (:::))
 
--- This alias is internal to Core.
+-- this alias is internal to Core.
 type alias Movement = List Step
 
-{-| A Step is an action that the turtle can take.
-    * Forward moves the turtle a given amount in the direction it is facing.
-    * Back moves the turtle backwards by the given amount.
-    * Left and Right rotate the turtle by the given angle in degrees.
-    * Make tells the turtle to perform an action.
-    * Branch tells the turle to perform two actions starting from the same point.
-    * Scale sets the current scale factor. Moving forward and back are multiplied by the scale factor. Scale factors compound together: `Scale 2, Scale 2` is the same as `Scale 4`.
-    * Stay tells the turtle to do nothing.
-    * Pen sets the color of the pen's ink.
-    * PenUp takes the pen off the paper so the turtle stops drawing.
-    * PenDown puts the pen back on the paper.
-    * Randomly provides a function with a random seed for use with the [Random](http://package.elm-lang.org/packages/elm-lang/core/latest/Random) library. The function must return the new seed.
-    * Teleport moves the turtle to a new location, drawing as is goes if the pen is down.
-    * RotateTo sets the turtle's rotation.
-
-The turtle starts at (0,0) facing up (90 degrees), with the pen down using black ink, and a scale factor of 1.
-
--}
+-- language primitives. The nodes of the AST.
 type Step = Forward Float | Back Float | Right Float | Left Float |
             Make Movement | Branch Movement Movement | Atomically Movement |
             Scale Float |
@@ -138,14 +108,12 @@ render (w,h) figures =
     List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path))
              (NE.toList figures)
 
-{-| Run the turtle and immediately show the result in a collage of the given size (think `Window.dimensions`). Useful for rapidly iterating code, and for use with `Signal.map` and dynamic controls.
--}
+-- run the turtle and immediately show the result in a collage of the given size
 draw : Movement -> (Int, Int) -> Element
 draw m dims =
     render dims (evalFold m state0).figures
 
-{-| Animate the turtle drawing by showing the progressive steps.
--}
+-- animate the turtle drawing by showing the progressive steps
 animate : Movement -> Signal Element
 animate m =
     case NE.fromList <| evalScan state0 m of
@@ -156,8 +124,7 @@ animate m =
                 renderHelper dims ne_state = render dims (NE.head ne_state).figures
         in Signal.map2 renderHelper Window.dimensions current
 
-{-| Determine the number of steps in a Movement, accounting for recursion.
--}
+-- determine the number of steps in a Movement, accounting for recursion
 length : Movement -> Int
 length =
     let length' step = case step of
@@ -167,8 +134,7 @@ length =
         _ -> 1
     in List.foldl (\step sum -> length' step + sum) 0
 
-{-| Determine the recursive depth of a Movement.
--}
+-- determine the recursive depth of a Movement
 depth : Movement -> Int
 depth =
     let depth' step = case step of
