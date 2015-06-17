@@ -1,4 +1,4 @@
-module Turtle.Core (draw, animate, Step(..), length, depth) where
+module Turtle.Core (DrawOptions, defaultDrawOptions, draw, AnimateOptions, defaultAnimateOptions, animate, Step(..), length, depth) where
 
 import Graphics.Element as Element exposing (Element)
 import Graphics.Collage as C exposing (defaultLine)
@@ -25,9 +25,13 @@ type alias Coord = (Float, Float)
 type alias Figure = {color : Color, path : Nonempty Coord}
 type alias State = {theta : Float, scale : Float, penDown : Bool, seed : Random.Seed, figures : Nonempty Figure}
 
--- initial state of the evaluator
-state0 : State
-state0 = State (degrees 90) 1 True (Random.initialSeed 628318530718)
+-- a random seed, good as any
+seed : Random.Seed
+seed = Random.initialSeed 628318530718
+
+-- initial state of the evaluator, parameterized over the seed
+state0 : Random.Seed -> State
+state0 seed = State (degrees 90) 1 True seed
             <| NE.fromElement (Figure Color.black (NE.fromElement (0,0)))
 
 -- make a new figure, based on the old one
@@ -108,28 +112,37 @@ render (w,h) figures =
     List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path))
              (NE.toList figures)
 
+type alias DrawOptions = { seed : Random.Seed , dims : (Int, Int) }
+
+defaultDrawOptions : DrawOptions
+defaultDrawOptions = DrawOptions seed (800, 800)
+
 -- run the turtle and immediately show the result in a collage of the given size
-draw : Movement -> (Int, Int) -> Element
-draw m dims =
-    render dims (evalFold m state0).figures
+draw : DrawOptions -> Movement ->  Element
+draw {seed, dims} m =
+    render dims (evalFold m (state0 seed)).figures
+
+type alias AnimateOptions = { seed : Random.Seed , dims : Signal (Int, Int), clock : Signal () }
+
+defaultAnimateOptions : AnimateOptions
+defaultAnimateOptions = AnimateOptions seed Window.dimensions (Signal.map (always ()) (Time.fps 5))
 
 -- animate the turtle drawing by showing the progressive steps
-animate : Movement -> Signal Element
-animate m =
-    case NE.fromList <| evalScan state0 m of
+animate : AnimateOptions -> Movement -> Signal Element
+animate {seed, dims, clock} m =
+    case NE.fromList <| evalScan (state0 seed) m of
         Nothing -> Signal.constant Element.empty
         Just frames ->
             let current : Signal (Nonempty State)
-                current = Signal.foldp (always NE.pop) frames (Time.fps 60)
+                current = Signal.foldp (always NE.pop) frames clock
                 renderHelper dims ne_state = render dims (NE.head ne_state).figures
-        in Signal.map2 renderHelper Window.dimensions current
+        in Signal.map2 renderHelper dims current
 
 -- determine the number of steps in a Movement, accounting for recursion
 length : Movement -> Int
 length =
     let length' step = case step of
         Make m' -> length m'
-        Atomically m' -> length m'
         Branch m1 m2 -> length m1 + length m2
         _ -> 1
     in List.foldl (\step sum -> length' step + sum) 0
@@ -139,7 +152,6 @@ depth : Movement -> Int
 depth =
     let depth' step = case step of
         Make m' -> depth m' + 1
-        Atomically m' -> depth m' + 1
         Branch m1 m2 -> depth m1 `max` depth m2 + 1
         _ -> 1
     in List.foldl (\step sum -> depth' step `max` sum) 0

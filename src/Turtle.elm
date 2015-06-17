@@ -1,6 +1,6 @@
 module Turtle where
 
-{-|
+{-| A tiny language for teaching a virtual turtle to draw.
 
 Move the turtle around by making a list of steps. Then give it to the turtle with `animate`. Like this:
 
@@ -11,12 +11,12 @@ steps = [forward 20, left 90, forward 10]
 main = animate steps
 ````
 
-The turtle starts at (0,0) facing up (90 degrees), with the pen down using black ink, and a scale factor of 1.
+The turtle starts in the middle of the page facing up (90 degrees), with the pen down using black ink.
 
-# Making Steps
-@docs left, forward, make, penUp, penDown, penColor, withRandom
+## Making Steps
+@docs left, right, forward, make, penUp, penDown, penColor, withRandom
 
-# Running Steps
+## Running Steps
 Once you've made a list of steps, use one of these functions to see it happen.
 @docs animate, draw
 -}
@@ -28,10 +28,15 @@ import Random
 
 type alias Step = Core.Step
 
-{- Turn the turtle left by a certain number of degrees. How can you make the turtle turn right?
+{- Turn the turtle left by a certain number of degrees.
 -}
 left : Float -> Step
 left = Core.Left
+
+{- Turn the turtle right by a certain number of degrees.
+-}
+right : Float -> Step
+right = Core.Right
 
 {- Move the turtle forward by a certain amount. How can you make the turtle move backwards?
 -}
@@ -77,10 +82,10 @@ withRandom =
 {-| Animate the turtle drawing by showing the each step.
 -}
 animate : List Step -> Signal Element
-animate = Core.animate
+animate = Core.animate Core.defaultAnimateOptions
 
 {-| Run the turtle and immediately show the result in a collage of the given size. It is
 useful when you are changing your code quickly: `main = Signal.map (draw mySteps) Window.dimensions`
 -}
-draw : List Step -> (Int,Int) -> Element
-draw = Core.draw
+draw : List Step -> Element
+draw = Core.draw Core.defaultDrawOptions
