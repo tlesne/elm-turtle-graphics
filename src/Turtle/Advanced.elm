@@ -14,7 +14,7 @@ Yes, this will work and place all the functions into the `Turtle` namespace.
 @docs back
 
 ## Shapes
-@docs ngon, circle
+@docs ngon, circle, star
 
 ## Modifiers
 @docs scaled, invisibly, atomically
@@ -58,11 +58,12 @@ rotateTo = Core.RotateTo
 teleport : (Float, Float) -> Step
 teleport = Core.Teleport
 
-{-| Create an n-gon with sides of length 1. Use `scale` or `scaled` to increase the size.
+{-| Create a regular n-gon with sides of length 50. Use `scale` or `scaled` to increase the size. The turtle begins the
+first edge immediately; you may want to position and rotate the turtle first.
 -}
 ngon : Int -> Step
 ngon n =
-    Core.Make <| List.repeat n <| Core.Make [Core.Forward 1, Core.Left (360 / toFloat n)]
+    Core.Make <| List.repeat n <| Core.Make [Core.Forward 50, Core.Left (360 / toFloat n)]
 
 {-| Create a circle of the given radius, centered at the current location.
 -}
@@ -71,6 +72,24 @@ circle r =
     let n = 64
         dc = pi*r/n
     in Core.Atomically <| (Core.Forward r) :: (Core.Left 90) :: List.repeat n (Core.Make [Core.Forward dc, Core.Left (360 / toFloat n)])
+
+
+{-| Create a star polygon. The first argument specifies the number of sides. The second argument specifies the ratio of
+the exterior angle to the interior angle. A pentagram is `star 5 3` and a Star of David is `star 6 2`.
+
+Each side has length 50. Use `scale` or `scaled` to increase the size. The turtle begins the
+first edge immediately; you may want to position and rotate the turtle first.
+-}
+star : Int -> Float -> Step
+star n m =
+    let alpha = 360 / (toFloat n * (m - 1))
+        beta = m*alpha
+    in Core.Atomically <| List.repeat n <| Core.Make
+        [ Core.Forward 50
+        , Core.Right (180-alpha)
+        , Core.Forward 50
+        , Core.Left (180-beta)
+        ]
 
 {-| Scale a step by a given factor without affecting later actions.
 -}
@@ -85,8 +104,8 @@ invisibly step =
     Core.Make [Core.PenUp, step, Core.PenDown]
 
 {-| The same as `make`, except when using `animate` the steps are all run together (atomically). Also considered to be a
-single step by `depth` and `length`. Used by `circle` and `ngon` to draw shapes immediately rather than watch the turtle
-trace them out.
+single step by `depth` and `length`. Used by the geometry helpers in this library to draw shapes immediately rather than
+watch the turtle trace them out.
 -}
 atomically : List Step -> Step
 atomically = Core.Atomically
