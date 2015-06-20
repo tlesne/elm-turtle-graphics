@@ -92,17 +92,20 @@ eval step state = case step of
 evalFold : Movement -> State -> State
 evalFold = flip (List.foldl eval)
 
+-- TODO put this in the Nonempty library
+ne_append (NE.Nonempty x xs) (NE.Nonempty y ys) = NE.Nonempty x (xs ++ y :: ys)
+
 -- evaluate many steps, saving each intermediate end result
-evalScan : State -> Movement -> List State
+evalScan : State -> Movement -> Nonempty State
 evalScan state m =
     case m of
-        [] -> [state]
+        [] -> NE.fromElement state
         step::steps -> case step of
             Make m' -> let states = evalScan state m'
-                           state' = states |> List.reverse |> List.head |> Maybe.withDefault state
-                       in states ++ evalScan state' steps
+                           state' = states |> NE.reverse |> NE.head
+                       in states `ne_append` evalScan state' steps
             _ -> let state' = eval step state
-                 in state' :: evalScan state' steps
+                 in state' ::: evalScan state' steps
 
 -- render the eval'd state as a collage with the given dimensions
 render : (Int, Int) -> Nonempty Figure -> Element
@@ -130,13 +133,15 @@ defaultAnimateOptions = AnimateOptions seed Window.dimensions (Signal.map (alway
 -- animate the turtle drawing by showing the progressive steps
 animate : AnimateOptions -> Movement -> Signal Element
 animate {seed, dims, clock} m =
-    case NE.fromList <| evalScan (state0 seed) m of
-        Nothing -> Signal.constant Element.empty
-        Just frames ->
-            let current : Signal (Nonempty State)
-                current = Signal.foldp (always NE.pop) frames clock
-                renderHelper dims ne_state = render dims (NE.head ne_state).figures
-        in Signal.map2 renderHelper dims current
+    let noPath fig = NE.isSingleton fig.path
+        figures : Nonempty (Nonempty Figure)
+        figures = evalScan (state0 seed) m
+            -- pruning logic to remove duplicate paths, paths of one point, and duplicate figures
+            |> NE.map (.figures>>(\figs -> if noPath (NE.head figs) then NE.pop figs else figs)>>NE.dedup)
+            |> NE.dedup
+        current : Signal (Nonempty Figure)
+        current = Signal.foldp (always NE.pop) figures clock |> Signal.map NE.head
+    in Signal.map2 render dims current
 
 -- determine the number of steps in a Movement, accounting for recursion
 length : Movement -> Int
