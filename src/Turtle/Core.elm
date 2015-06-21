@@ -115,7 +115,7 @@ render (w,h) figures =
 type alias DrawOptions = { seed : Random.Seed , dims : (Int, Int) }
 
 defaultDrawOptions : DrawOptions
-defaultDrawOptions = DrawOptions seed (800, 800)
+defaultDrawOptions = DrawOptions seed (1000, 1000)
 
 -- run the turtle and immediately show the result in a collage of the given size
 draw : DrawOptions -> Movement ->  Element
