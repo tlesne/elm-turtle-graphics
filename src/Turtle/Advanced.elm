@@ -11,7 +11,7 @@ import Turtle.Advanced as Turtle
 Yes, this will work and place all the functions into the `Turtle` namespace.
 
 ## Basics
-@docs back
+@docs back, stay
 
 ## Shapes
 @docs ngon, circle, star
@@ -42,6 +42,11 @@ import Random
 -}
 back : Float -> Step
 back = Core.Back
+
+{-| Tell the turtle to do nothing.
+-}
+stay : Step
+stay = Core.Stay
 
 {-| Provide access to a random seed, and therefore, the Random library. This is much more powerful than `withRandom`
 taking a random float, but carries with it the responsibility to pass back an unused seed. -}
