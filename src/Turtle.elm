@@ -13,16 +13,16 @@ main = animate steps
 
 The turtle starts in the middle of the page facing up (90 degrees), with the pen down using black ink.
 
-## Moving
+# Moving
 @docs left, right, forward
 
-## Drawing
+# Drawing
 @docs penUp, penDown, penColor
 
-## Special
+# Special
 @docs make, withRandom, scale
 
-## Running Steps
+# Running Steps
 Once you've made a list of steps, use one of these functions to see it happen.
 @docs animate, draw
 -}
@@ -34,22 +34,22 @@ import Random
 
 type alias Step = Core.Step
 
-{- Turn the turtle left by a certain number of degrees.
+{-| Turn the turtle left by a certain number of degrees.
 -}
 left : Float -> Step
 left = Core.Left
 
-{- Turn the turtle right by a certain number of degrees.
+{-| Turn the turtle right by a certain number of degrees.
 -}
 right : Float -> Step
 right = Core.Right
 
-{- Move the turtle forward by a certain amount. How can you make the turtle move backwards?
+{-| Move the turtle forward by a certain amount. How can you make the turtle move backwards?
 -}
 forward : Float -> Step
 forward = Core.Forward
 
-{- Do every step in the list. Really useful for giving names to small jobs. Think about `make star`, or making a
+{-| Do every step in the list. Really useful for giving names to small jobs. Think about `make star`, or making a
 five-pointed star with `make (star 5)`.
 -}
 make : List Step -> Step

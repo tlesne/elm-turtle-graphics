@@ -10,31 +10,31 @@ import Turtle.Advanced as Turtle
 
 Yes, this will work and place all the functions into the `Turtle` namespace.
 
-## Basics
+# Basics
 @docs back, stay
 
-## Shapes
+# Shapes
 @docs ngon, circle, star
 
-## Functional Modifiers
+# Functional Modifiers
 These functions wrap steps with transformations that are undone afterwards, rather than leaving state with the turtle.
 They still leak state a little, so be careful. Also, they may be made to leak less in a MINOR release.
 @docs scaled, rotated, invisibly
 
-## Atomicity
+# Atomicity
 @docs atomically
 
-## Absolute Positioning
+# Absolute Positioning
 @docs teleport, rotateTo
 
-## Working with Steps
-### Drawing
+# Working with Steps
+## Drawing
 @docs DrawOptions, defaultDrawOptions, drawWith
 
-### Animating
+## Animating
 @docs AnimateOptions, defaultAnimateOptions, animateWith
 
-### Inspecting
+## Inspecting
 @docs length, depth
 
 -}
@@ -43,7 +43,8 @@ import Turtle.Core as Core exposing (Step)
 import Graphics.Element exposing (Element)
 import Random
 
-{-| Move the turtle back a distance, without affecting the rotation.
+{-| Move the turtle back a distance, without affecting the rotation. The turtle will still draw the path if the pen is
+down.
 -}
 back : Float -> Step
 back = Core.Back
