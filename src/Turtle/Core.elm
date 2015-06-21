@@ -92,9 +92,6 @@ eval step state = case step of
 evalFold : Movement -> State -> State
 evalFold = flip (List.foldl eval)
 
--- TODO put this in the Nonempty library
-ne_append (NE.Nonempty x xs) (NE.Nonempty y ys) = NE.Nonempty x (xs ++ y :: ys)
-
 -- evaluate many steps, saving each intermediate end result
 evalScan : State -> Movement -> Nonempty State
 evalScan state m =
@@ -103,7 +100,7 @@ evalScan state m =
         step::steps -> case step of
             Make m' -> let states = evalScan state m'
                            state' = states |> NE.reverse |> NE.head
-                       in states `ne_append` evalScan state' steps
+                       in states `NE.append` evalScan state' steps
             _ -> let state' = eval step state
                  in state' ::: evalScan state' steps
 
