@@ -16,8 +16,13 @@ Yes, this will work and place all the functions into the `Turtle` namespace.
 ## Shapes
 @docs ngon, circle, star
 
-## Modifiers
-@docs scaled, invisibly, atomically
+## Functional Modifiers
+These functions wrap steps with transformations that are undone afterwards, rather than leaving state with the turtle.
+They still leak state a little, so be careful. Also, they may be made to leak less in a MINOR release.
+@docs scaled, rotated, invisibly
+
+## Atomicity
+@docs atomically
 
 ## Absolute Positioning
 @docs teleport, rotateTo
@@ -49,7 +54,8 @@ stay : Step
 stay = Core.Stay
 
 {-| Provide access to a random seed, and therefore, the Random library. This is much more powerful than `withRandom`
-taking a random float, but carries with it the responsibility to pass back an unused seed. -}
+taking a random float, but carries with it the responsibility to pass back an unused seed.
+-}
 randomly : (Random.Seed -> (Step, Random.Seed)) -> Step
 randomly = Core.Randomly
 
@@ -79,8 +85,9 @@ circle r =
     in Core.Atomically <| (Core.Forward r) :: (Core.Left 90) :: List.repeat n (Core.Make [Core.Forward dc, Core.Left (360 / toFloat n)])
 
 
-{-| Create a star polygon. The first argument specifies the number of sides. The second argument specifies the ratio of
-the exterior angle to the interior angle. A pentagram is `star 5 3` and a Star of David is `star 6 2`.
+{-| Create a star polygon. The first argument specifies the number of points. The second argument specifies the ratio of
+the exterior angle to the interior angle. A pentagram is `star 5 3` and a Star of David is `star 6 2`. This can take
+some experimentation to get the effect you need; sometimes a star comes out as a convex polygon.
 
 Each side has length 50. Use `scale` or `scaled` to increase the size. The turtle begins the
 first edge immediately; you may want to position and rotate the turtle first.
@@ -96,11 +103,17 @@ star n m =
         , Core.Left (180-beta)
         ]
 
-{-| Scale a step by a given factor without affecting later actions.
+{-| Scale a step by a given factor without affecting later actions (assuming the step itself does not change the scale).
 -}
 scaled : Float -> Step -> Step
 scaled factor step =
     Core.Make [Core.Scale factor, step, Core.Scale (1/factor)]
+
+{-| Rotate a step left (counterclockwise) by a given angle in degrees, and then rotate back (assuming the step itself does not change the angle.)
+-}
+rotated : Float -> Step -> Step
+rotated angle step =
+    Core.Make [Core.Left angle, step, Core.Right angle]
 
 {-| Run a step with the pen up, and then put it down to start drawing. Useful for moving the a new location.
 -}
@@ -119,7 +132,7 @@ atomically = Core.Atomically
 -}
 type alias DrawOptions = { seed : Random.Seed , dims : (Int, Int) }
 
-{-| The options used for `draw`. Uses an arbitrary seed and the arbitrary dimensions of 800x800.
+{-| The options used for `draw`. Uses an arbitrary seed and the arbitrary dimensions of 1000x1000.
 -}
 defaultDrawOptions : DrawOptions
 defaultDrawOptions = Core.defaultDrawOptions

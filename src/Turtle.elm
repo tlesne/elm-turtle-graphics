@@ -1,6 +1,6 @@
 module Turtle where
 
-{-| A tiny language for teaching a virtual turtle to draw.
+{-| A tiny language for teaching a virtual turtle to draw. The turtle carries a pen and draws lines as it moves.
 
 Move the turtle around by making a list of steps. Then give it to the turtle with `animate`. Like this:
 
@@ -13,8 +13,14 @@ main = animate steps
 
 The turtle starts in the middle of the page facing up (90 degrees), with the pen down using black ink.
 
-## Making Steps
-@docs left, right, forward, make, penUp, penDown, penColor, withRandom
+## Moving
+@docs left, right, forward
+
+## Drawing
+@docs penUp, penDown, penColor
+
+## Special
+@docs make, withRandom, scale
 
 ## Running Steps
 Once you've made a list of steps, use one of these functions to see it happen.
@@ -70,7 +76,7 @@ penDown = Core.PenDown
 penColor : Color -> Step
 penColor = Core.Pen
 
-{-| Provide a step-making function with a random number between 0 and 1.
+{-| Give a step-making function a random number between 0 and 1.
 -}
 withRandom : (Float -> Step) -> Step
 withRandom =
@@ -79,7 +85,7 @@ withRandom =
         let (x, seed') = Random.generate gen seed
         in (f x, seed')))
 
-{-| Animate the turtle drawing by showing the each step.
+{-| Animate the turtle drawing, showing the each step as it moves.
 -}
 animate : List Step -> Signal Element
 animate = Core.animate Core.defaultAnimateOptions
