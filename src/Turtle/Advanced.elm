@@ -139,7 +139,7 @@ defaultDrawOptions : DrawOptions
 defaultDrawOptions = Core.defaultDrawOptions
 
 {-| Draw the steps immediately, using the options given. You will usually use this with `Signal.map` to rapidly iterate
-a design, change a drawing based on user input, or create an animation.
+a design, change a drawing based on user input, or create a custom animation.
 -}
 drawWith : DrawOptions -> List Step ->  Element
 drawWith = Core.draw
@@ -160,12 +160,12 @@ defaultAnimateOptions = Core.defaultAnimateOptions
 animateWith : AnimateOptions -> List Step ->  Signal Element
 animateWith = Core.animate
 
-{-| Determine the number of steps in a Movement, accounting for recursion.
+{-| Determine the number of steps in a list of Steps, accounting for recursion.
 -}
 length : List Step -> Int
 length = Core.length
 
-{-| Determine the recursive depth of a Movement.
+{-| Determine the recursive depth of a list of Steps.
 -}
 depth : List Step -> Int
 depth = Core.depth
