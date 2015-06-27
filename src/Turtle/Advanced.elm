@@ -24,6 +24,9 @@ They still leak state a little, so be careful. Also, they may be made to leak le
 # Atomicity
 @docs atomically
 
+# Randomness
+@docs randomly
+
 # Absolute Positioning
 @docs teleport, rotateTo
 
@@ -39,7 +42,8 @@ They still leak state a little, so be careful. Also, they may be made to leak le
 
 -}
 
-import Turtle.Core as Core exposing (Step)
+import Turtle.Core as Core
+import Turtle as Base exposing (Step)
 import Graphics.Element exposing (Element)
 import Random
 
