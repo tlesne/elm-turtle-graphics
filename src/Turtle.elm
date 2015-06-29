@@ -25,6 +25,10 @@ The turtle starts in the middle of the page facing up (90 degrees), with the pen
 # Running Steps
 Once you've made a list of steps, use one of these functions to see it happen.
 @docs animate, draw
+
+# What is a Step?
+@docs Step
+
 -}
 
 import Turtle.Core as Core
@@ -32,6 +36,8 @@ import Graphics.Element exposing (Element)
 import Color exposing (Color)
 import Random
 
+{-| A Step is an action that a turtle can do.
+-}
 type alias Step = Core.Step
 
 {-| Turn the turtle left by a certain number of degrees.
