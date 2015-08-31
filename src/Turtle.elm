@@ -96,8 +96,8 @@ withRandom =
 animate : List Step -> Signal Element
 animate = Core.animate Core.defaultAnimateOptions
 
-{-| Run the turtle and immediately show the result in a collage of the given size. It is
-useful when you are changing your code quickly and don't want to wait for the turtle to move.
+{-| Run the turtle and immediately show the result. It is useful when you are
+changing your code quickly and don't want to wait for the turtle to move.
 -}
 draw : List Step -> Element
 draw = Core.draw Core.defaultDrawOptions
