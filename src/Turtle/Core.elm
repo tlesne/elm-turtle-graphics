@@ -38,24 +38,24 @@ state0 seed = State (degrees 90) 1 True seed
 newFigure : State -> State
 newFigure state =
     let oldFigure = NE.head state.figures
-        newFigure = {oldFigure| path <- NE.dropTail oldFigure.path}
-    in {state| figures <- newFigure ::: state.figures}
+        newFigure = {oldFigure| path = NE.dropTail oldFigure.path}
+    in {state| figures = newFigure ::: state.figures}
 
 -- Takes an action that requires a new figure. If the current figure *is* new, overwrite it; otherwise make a new one.
 changeFigure : State -> (Figure -> Figure) -> State
 changeFigure state f =
     if NE.isSingleton (NE.head state.figures).path
-    then {state|figures <- NE.replaceHead (f <| NE.head state.figures) state.figures}
+    then {state|figures = NE.replaceHead (f <| NE.head state.figures) state.figures}
     else changeFigure (newFigure state) f
 
 -- move to a new location, creating a new figure if the pen is up
 moveTo : State -> Coord -> State
 moveTo state pos =
     if not state.penDown
-    then changeFigure state (\fig -> {fig| path <- NE.fromElement pos})
+    then changeFigure state (\fig -> {fig| path = NE.fromElement pos})
     else let oldFigure = NE.head state.figures
-             newFigure = {oldFigure| path <- pos ::: oldFigure.path}
-         in {state| figures <- NE.replaceHead newFigure state.figures}
+             newFigure = {oldFigure| path = pos ::: oldFigure.path}
+         in {state| figures = NE.replaceHead newFigure state.figures}
 
 -- evaluate a step given a state to produce a new state
 eval : Step -> State -> State
@@ -65,28 +65,28 @@ eval step state = case step of
                      dy = state.scale * d * sin state.theta
                  in moveTo state (x0+dx, y0+dy)
     Back d -> eval (Forward -d) state
-    Right ang -> {state| theta <- state.theta - (degrees ang)}
-    Left ang -> {state| theta <- state.theta + (degrees ang)}
-    Scale x -> {state| scale <- state.scale * x}
+    Right ang -> {state| theta = state.theta - (degrees ang)}
+    Left ang -> {state| theta = state.theta + (degrees ang)}
+    Scale x -> {state| scale = state.scale * x}
     Stay -> state
-    Pen color -> changeFigure state (\fig -> {fig|color <- color})
-    PenUp -> {state| penDown <- False}
-    PenDown -> {state| penDown <- True}
+    Pen color -> changeFigure state (\fig -> {fig|color = color})
+    PenUp -> {state| penDown = False}
+    PenDown -> {state| penDown = True}
     Randomly f -> let (step', seed') = f state.seed
-                  in eval step' {state|seed <- seed'}
+                  in eval step' {state|seed = seed'}
     Teleport newPos -> moveTo state newPos
-    RotateTo newTheta -> {state| theta <- (degrees newTheta)}
+    RotateTo newTheta -> {state| theta = (degrees newTheta)}
     Make ms -> evalFold ms state
     Atomically ms -> evalFold ms state
     Branch m1 m2 ->
         let oldFigure = NE.head state.figures
-            blankFigure = {oldFigure| path <- NE.dropTail oldFigure.path}
-            blankState = {state| figures <- NE.fromElement blankFigure}
+            blankFigure = {oldFigure| path = NE.dropTail oldFigure.path}
+            blankState = {state| figures = NE.fromElement blankFigure}
             results1 = evalFold m1 blankState
             results2 = evalFold m2 blankState
             newFigures = NE.Nonempty oldFigure
                 <| NE.toList results1.figures ++ NE.toList results2.figures ++ NE.tail state.figures
-        in {state| figures <- newFigures}
+        in {state| figures = newFigures}
 
 -- evaluate many steps, saving the end result
 evalFold : Movement -> State -> State
@@ -109,7 +109,7 @@ render : (Int, Int) -> Nonempty Figure -> Element
 render (w,h) figures =
     C.collage w h <|
     List.map (uncurry C.traced) <|
-    List.map (\fig -> ({defaultLine| color <- fig.color}, NE.toList fig.path))
+    List.map (\fig -> ({defaultLine| color = fig.color}, C.path <| NE.toList fig.path))
              (NE.toList figures)
 
 type alias DrawOptions = { seed : Random.Seed , dims : (Int, Int) }

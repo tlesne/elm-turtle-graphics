@@ -59,7 +59,8 @@ stay : Step
 stay = Core.Stay
 
 {-| Provide access to a random seed, and therefore, the Random library. This is much more powerful than `withRandom`
-taking a random float, but carries with it the responsibility to pass back an unused seed.
+taking a random float, but carries with it the responsibility to pass back an unused seed. To use with a Generator, call
+`Random.generate theGenerator`.
 -}
 randomly : (Random.Seed -> (Step, Random.Seed)) -> Step
 randomly = Core.Randomly
