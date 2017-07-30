@@ -15,7 +15,7 @@ polygon angle n clr =
 turtle : Time -> List Step
 turtle angle =
     List.map (uncurry (polygon angle)) <|
-        List.map2 (,) [3..8] [red, orange, yellow, green, blue, purple]
+        List.map2 (,) (List.range 3 8) [red, orange, yellow, green, blue, purple]
 
 clock : Signal Float
 clock = Signal.foldp (\dt t -> dt/20 + t) 0 (Time.fps 30)

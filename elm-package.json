@@ -1,5 +1,5 @@
 {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "summary": "LOGO-style turtle graphics",
     "repository": "https://github.com/mgold/elm-turtle-graphics.git",
     "license": "BSD3",
@@ -11,8 +11,10 @@
         "Turtle.Advanced"
     ],
     "dependencies": {
-        "elm-lang/core": "3.0.0 <= v < 4.0.0",
-        "mgold/elm-nonempty-list": "1.7.1 <= v < 2.0.0"
+        "elm-lang/core": "5.1.1 <= v < 6.0.0",
+        "elm-lang/window": "1.0.1 <= v < 2.0.0",
+        "evancz/elm-graphics": "1.0.1 <= v < 2.0.0",
+        "mgold/elm-nonempty-list": "3.1.0 <= v < 4.0.0"
     },
-    "elm-version": "0.16.0 <= v < 0.17.0"
+    "elm-version": "0.18.0 <= v < 0.19.0"
 }

@@ -25,7 +25,7 @@ ray frac =
 quadrant : List Step
 quadrant =
     let rez = 24
-        spots = List.map (\x -> x/rez) [1..rez]
+        spots = List.map (\x -> x/rez) (List.range 1 rez)
         rays = List.map (\x -> Turtle.make (ray x)) spots
     in (Turtle.left 90) :: (Turtle.forward <| d * (rez-1)/rez) :: (Turtle.right 180)
         :: List.intersperse (invisibly <| Turtle.forward (d/rez)) rays
